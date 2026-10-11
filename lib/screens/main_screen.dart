@@ -3,6 +3,9 @@ import 'home_screen.dart';
 import 'add_transaction_screen.dart';
 import 'transaction_list_screen.dart';
 import 'statistics_screen.dart';
+import 'profile_screen.dart';
+import 'filter_screen.dart';
+import '../models/filter_model.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,6 +16,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  FilterModel _currentFilter = FilterModel();
   
   // Dùng GlobalKey để có thể gọi hàm reload từ MainScreen
   final GlobalKey<HomeScreenState> _homeKey = GlobalKey<HomeScreenState>();
@@ -28,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
       HomeScreen(key: _homeKey),
       TransactionListScreen(key: _transactionListKey),
       StatisticsScreen(key: _statsKey),
+      const ProfileScreen(), // Thêm màn hình Cá nhân vào đây
     ];
   }
 
@@ -80,6 +85,23 @@ class _MainScreenState extends State<MainScreen> {
               ],
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black, size: 28),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FilterScreen(currentFilter: _currentFilter),
+                ),
+              );
+              if (result != null && result is FilterModel) {
+                setState(() => _currentFilter = result);
+                _homeKey.currentState?.applyFilter(result);
+                _transactionListKey.currentState?.applyFilter(result);
+                _statsKey.currentState?.applyFilter(result);
+              }
+            },
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -120,6 +142,7 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: const Color(0xFF2563EB),
         unselectedItemColor: const Color(0xFF64748B),
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        type: BottomNavigationBarType.fixed, // Cần dòng này khi có từ 4 tab trở lên
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_filled),
@@ -132,6 +155,11 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.pie_chart_outline),
             label: 'Thống kê',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Cá nhân',
           ),
         ],
       ),

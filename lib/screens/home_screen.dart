@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
 import '../widgets/home_widgets.dart';
-
+import '../models/filter_model.dart';
 import '../database/database_helper.dart';
 import '../models/transaction_model.dart';
 
@@ -17,6 +17,7 @@ class HomeScreenState extends State<HomeScreen> {
   int _totalIncome = 0;
   int _totalExpense = 0;
   bool _isLoading = true;
+  FilterModel _currentFilter = FilterModel();
 
   @override
   void initState() {
@@ -27,10 +28,10 @@ class HomeScreenState extends State<HomeScreen> {
   // Load danh sách giao dịch từ DB
   Future<void> loadTransactions() async {
     setState(() => _isLoading = true);
-    final transactions = await DatabaseHelper.instance.getAllTransactions();
+    List<TransactionModel> dbTransactions = await DatabaseHelper.instance.getAllTransactions();
     
     // Nếu DB trống, tạo dữ liệu mẫu (mock data)
-    if (transactions.isEmpty) {
+    if (dbTransactions.isEmpty) {
       final mockData = [
         TransactionModel(title: 'Ăn trưa', category: 'Ăn uống', amount: 50000, isIncome: false, date: DateTime(2024, 9, 3)),
         TransactionModel(title: 'Xăng xe', category: 'Di chuyển', amount: 100000, isIncome: false, date: DateTime(2024, 9, 3)),
@@ -41,13 +42,18 @@ class HomeScreenState extends State<HomeScreen> {
       for (var item in mockData) {
         await DatabaseHelper.instance.insertTransaction(item);
       }
-      _transactions = await DatabaseHelper.instance.getAllTransactions();
-    } else {
-      _transactions = transactions;
+      dbTransactions = await DatabaseHelper.instance.getAllTransactions();
     }
 
+    _transactions = dbTransactions.where((tx) => _currentFilter.match(tx)).toList();
     _calculateTotals();
     setState(() => _isLoading = false);
+  }
+
+  void applyFilter(FilterModel filter) {
+    if (!mounted) return;
+    setState(() => _currentFilter = filter);
+    loadTransactions();
   }
 
   // Tính toán số dư

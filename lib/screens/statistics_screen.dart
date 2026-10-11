@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../database/database_helper.dart';
 import '../models/transaction_model.dart';
-
+import '../models/filter_model.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -14,6 +14,7 @@ class StatisticsScreen extends StatefulWidget {
 class StatisticsScreenState extends State<StatisticsScreen> {
   List<TransactionModel> _transactions = [];
   bool _isLoading = true;
+  FilterModel _currentFilter = FilterModel();
   
   // Dữ liệu tính toán
   final Map<String, int> _categoryExpenses = {};
@@ -29,13 +30,19 @@ class StatisticsScreenState extends State<StatisticsScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     
-    final transactions = await DatabaseHelper.instance.getAllTransactions();
+    final allTransactions = await DatabaseHelper.instance.getAllTransactions();
     
     if (mounted) {
-      _transactions = transactions;
+      _transactions = allTransactions.where((tx) => _currentFilter.match(tx)).toList();
       _calculateStatistics();
       setState(() => _isLoading = false);
     }
+  }
+
+  void applyFilter(FilterModel filter) {
+    if (!mounted) return;
+    setState(() => _currentFilter = filter);
+    loadData();
   }
 
   void _calculateStatistics() {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/transaction_model.dart';
+import '../models/filter_model.dart';
 import '../widgets/home_widgets.dart';
 import 'add_transaction_screen.dart';
 
@@ -14,6 +15,7 @@ class TransactionListScreen extends StatefulWidget {
 class TransactionListScreenState extends State<TransactionListScreen> {
   List<TransactionModel> _transactions = [];
   bool _isLoading = true;
+  FilterModel _currentFilter = FilterModel();
 
   @override
   void initState() {
@@ -24,13 +26,19 @@ class TransactionListScreenState extends State<TransactionListScreen> {
   Future<void> loadTransactions() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
-    final transactions = await DatabaseHelper.instance.getAllTransactions();
+    final allTransactions = await DatabaseHelper.instance.getAllTransactions();
     if (mounted) {
       setState(() {
-        _transactions = transactions;
+        _transactions = allTransactions.where((tx) => _currentFilter.match(tx)).toList();
         _isLoading = false;
       });
     }
+  }
+
+  void applyFilter(FilterModel filter) {
+    if (!mounted) return;
+    setState(() => _currentFilter = filter);
+    loadTransactions();
   }
 
   String _formatCurrency(int amount) {
